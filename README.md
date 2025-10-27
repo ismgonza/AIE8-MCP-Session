@@ -86,8 +86,73 @@ There are a few activities for this assignment!
 
 Choose an API that you enjoy using - and build an MCP server for it!
 
+---
+ANSWER:
+
+## Webzio Integration
+
+### `webzio.py`
+
+This file contains a **Webzio** class that acts as a client for the webz.io News API. It:
+
+- Accepts a search `query`, `sentiment` filter (positive/negative/neutral), and `language`
+- Fetches news articles from the webz.io API using an API token stored in environment variables
+- Has a `get_news()` method that returns raw JSON data from the API
+- Has a formatted `__str__()` method that presents the results in a readable format, showing:
+  - Query parameters used
+  - Total results and API requests remaining
+  - Top 5 articles with titles and URLs
+- Can be run standalone as a command-line tool
+
+### Integration with `server.py`
+
+The `server.py` file is an **MCP (Model Context Protocol) server** that exposes the Webzio functionality as a tool that AI assistants can use:
+
+1. It imports the `Webzio` class from `webzio.py`
+2. It wraps it in an MCP tool decorator (`@mcp.tool()`) as the `get_news()` function
+3. This exposes the news search capability through the MCP protocol, making it available to AI clients (like Claude in Cursor)
+4. When called, it instantiates a Webzio object and returns the formatted string output
+
+![](mcp_session13.svg)
+---
+
 ### 🏗️ Activity #2: 
 
 Build a simple LangGraph application that interacts with your MCP Server.
 
 You can find details [here](https://github.com/langchain-ai/langchain-mcp-adapters)!
+
+---
+ANSWER:
+
+## LangGraph MCP Client
+
+### `langgraph_mcp_client.py`
+
+This file demonstrates a **LangGraph agent** that connects to and uses the MCP server tools. It showcases the complete client-side implementation:
+
+- **MCP Connection**: Establishes a connection to the MCP server using stdio transport
+  - Uses `StdioServerParameters` to configure the Python server process
+  - Creates a `ClientSession` to communicate with the server
+  
+- **Tool Loading**: Dynamically loads all available tools from the MCP server
+  - Uses `load_mcp_tools()` from `langchain_mcp_adapters` to convert MCP tools into LangChain-compatible tools
+  - Makes tools like `web_search`, `roll_dice`, and `get_news` available to the agent
+
+- **ReAct Agent**: Creates an intelligent agent using `create_agent()` with GPT-4o-mini
+  - The agent can reason about which tools to use based on user queries
+  - Follows the ReAct (Reasoning + Acting) pattern to solve tasks
+
+- **Example Queries**: Demonstrates the agent's capabilities with three sample queries:
+  1. Fetching AI news with positive sentiment (uses `get_news`)
+  2. Rolling dice (uses `roll_dice`)
+  3. Web search for information (uses `web_search`)
+
+- **Response Display**: Shows detailed execution information including:
+  - Which tools were called
+  - Arguments passed to each tool
+  - Final response from the agent
+
+![](langgraph_mcp_session13.svg)
+
+---
